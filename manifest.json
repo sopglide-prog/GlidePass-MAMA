@@ -1,6 +1,6 @@
 {
-  "name": "SopScan",
-  "short_name": "SopScan",
+  "name": "PassMaMa",
+  "short_name": "PassMaMa",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
