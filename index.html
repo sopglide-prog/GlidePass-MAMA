@@ -41,6 +41,7 @@
       position:sticky;top:0;z-index:50;
       display:flex;align-items:center;justify-content:space-between;
       padding:14px 24px;
+      padding-top:max(60px, env(safe-area-inset-top));
       background:rgba(10,10,15,.85);
       backdrop-filter:blur(16px);
       border-bottom:1px solid var(--border2);
@@ -223,12 +224,12 @@
     #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
     #toast.err{border-color:rgba(239,68,68,.4);color:#fca5a5}
   </style>
-</head>
-<body>
+  </head>
+  <body>
 
-<header>
+  <header>
   <div class="logo">
-    <div class="logo-icon"><img src="Gemini_Generated_Image_pmwvltpmwvltpmwv-removebg-preview.png" alt="Logo"></div>
+    <div class="logo-icon"><img src="./logo.png" alt="Logo"></div>
     <div>
       <div class="logo-name">GlidePass <span style="color:var(--pink)">Mama</span></div>
       <div class="logo-sub">Influencer QR · Discoteca Mama</div>
@@ -238,14 +239,14 @@
     <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
     Historial
   </button>
-</header>
+  </header>
 
-<main>
+  <main>
   <!-- PAGE: CREAR QR -->
   <div class="page active" id="page-crear">
 
     <div class="page-logo">
-      <img src="Gemini_Generated_Image_pmwvltpmwvltpmwv-removebg-preview.png" alt="Logo empresa">
+      <img src="./logo.png" alt="Logo empresa">
     </div>
 
     <div class="field">
@@ -294,11 +295,11 @@
 
     <div id="hist-list"></div>
   </div>
-</main>
+  </main>
 
-<div id="toast"></div>
+  <div id="toast"></div>
 
-<script>
+  <script>
   const sb = window.supabase.createClient(
     'https://czpzkkakhdcwhbclhugk.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6cHpra2FraGRjd2hiY2xodWdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MTA0MzIsImV4cCI6MjA4OTE4NjQzMn0.dfUGsaZxg16X_S0uuGmCSvVTSGXVnwRGpBDqda5Z1P8'
@@ -543,6 +544,6 @@
 
     renderCards(historialData);
   }
-</script>
-</body>
-</html>
+  </script>
+  </body>
+  </html>
