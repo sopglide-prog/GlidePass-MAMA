@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>GlidePass Mama</title>
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap");
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a0f;
+      --card:#13131c;
+      --card2:#1c1c2a;
+      --pink:#ff2d78;
+      --pink2:#e0005f;
+      --pink-light:#ff6fa8;
+      --pink-glow:rgba(255,45,120,.45);
+      --pink-soft:rgba(255,45,120,.1);
+      --white:#f5f0ff;
+      --muted:#8888aa;
+      --border:rgba(255,255,255,.08);
+      --border2:rgba(255,255,255,.14);
+    }
+    html,body{height:100%;font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--white);overflow-x:hidden}
+    body{min-height:100dvh}
+
+    /* ── HEADER ── */
+    header{
+      position:sticky;top:0;z-index:50;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 24px;
+      background:rgba(10,10,15,.85);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border2);
+    }
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-icon{
+      width:40px;height:40px;border-radius:12px;
+      background:transparent;
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;
+    }
+    .logo-icon img{
+      width:100%;height:100%;object-fit:contain;display:block;
+    }
+    .logo-name{font-size:18px;font-weight:900;letter-spacing:-.5px}
+    .logo-sub{font-size:10px;font-weight:600;color:var(--pink-light);letter-spacing:1.5px;text-transform:uppercase}
+    .btn-hist-m{
+      display:flex;align-items:center;gap:7px;
+      padding:9px 18px;
+      background:var(--pink-soft);border:1px solid rgba(255,45,120,.3);
+      border-radius:100px;font-family:inherit;font-size:12px;font-weight:800;
+      color:var(--pink-light);letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:all .2s;
+    }
+    .btn-hist-m:hover{border-color:var(--pink);color:#fff;box-shadow:0 0 18px var(--pink-glow);background:rgba(255,45,120,.2)}
+
+    /* ── MAIN ── */
+    main{max-width:560px;margin:0 auto;padding:32px 20px 60px}
+
+    .page{display:none}
+    .page.active{display:block}
+
+    /* ── LOGO CENTRAL ── */
+    .page-logo{
+      display:flex;justify-content:center;
+      margin-bottom:32px;margin-top:8px;
+    }
+    .page-logo img{
+      width:140px;height:140px;
+      object-fit:contain;
+      border-radius:24px;
+      filter:drop-shadow(0 0 28px var(--pink-glow));
+    }
+    @media(max-width:480px){
+      .page-logo img{width:160px;height:160px;}
+    }
+
+    /* ── FORM ── */
+    .form-title{font-size:28px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px}
+    .form-title span{color:var(--pink)}
+    .form-sub{font-size:13px;color:var(--muted);margin-bottom:28px}
+
+    .field{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+    .field label{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--muted);text-transform:uppercase}
+    .field input{
+      width:100%;background:var(--card2);border:1.5px solid var(--border2);
+      border-radius:12px;padding:14px 16px;
+      font-size:15px;font-weight:600;color:var(--white);font-family:inherit;outline:none;
+      transition:border-color .2s;
+    }
+    .field input:focus{border-color:var(--pink)}
+    .field input::placeholder{color:var(--muted);font-weight:400}
+
+    .btn-gen{
+      width:100%;height:58px;margin-top:8px;
+      background:linear-gradient(135deg,var(--pink),var(--pink2));
+      border:none;border-radius:16px;
+      font-family:inherit;font-size:16px;font-weight:900;letter-spacing:.5px;
+      color:#fff;cursor:pointer;transition:all .22s;
+      box-shadow:0 4px 24px var(--pink-glow);
+      display:flex;align-items:center;justify-content:center;gap:10px;
+    }
+    .btn-gen:hover{transform:translateY(-3px);box-shadow:0 12px 36px var(--pink-glow)}
+    .btn-gen:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+    /* ── QR CARD ── */
+    .qr-result{
+      display:none;margin-top:24px;
+      background:var(--card);border:2px solid rgba(255,45,120,.3);
+      border-radius:20px;padding:28px 24px;text-align:center;
+    }
+    .qr-result.show{display:block;animation:pop .3s cubic-bezier(.34,1.4,.64,1)}
+    @keyframes pop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+    .qr-result-title{font-size:13px;font-weight:800;color:var(--pink);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+    .qr-wrap{display:flex;justify-content:center;margin:0 auto 14px;padding:10px;background:#fff;border-radius:12px;width:fit-content}
+    .qr-influencer{font-size:20px;font-weight:900;color:var(--white);margin-bottom:4px}
+    .qr-empresa{font-size:13px;color:var(--muted);margin-bottom:14px}
+    .qr-badge-usos{
+      display:inline-flex;align-items:center;gap:6px;
+      background:var(--pink-soft);border:1px solid rgba(255,45,120,.3);
+      border-radius:100px;padding:5px 14px;
+      font-size:11px;font-weight:800;color:var(--pink-light);letter-spacing:.5px;
+      margin-bottom:16px;
+    }
+    .btn-dl{
+      width:100%;padding:14px;
+      background:var(--card2);border:1.5px solid rgba(255,45,120,.4);
+      border-radius:14px;font-family:inherit;font-size:14px;font-weight:700;
+      color:var(--pink-light);cursor:pointer;transition:all .2s;
+    }
+    .btn-dl:hover{background:rgba(255,45,120,.1);border-color:var(--pink)}
+
+    /* ── HISTORIAL ── */
+    .hist-title{font-size:24px;font-weight:900;letter-spacing:-.5px;margin-bottom:4px}
+    .hist-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+    .btn-back{
+      display:inline-flex;align-items:center;gap:6px;
+      background:none;border:none;color:var(--muted);font-family:inherit;
+      font-size:13px;font-weight:700;cursor:pointer;padding:0;margin-bottom:20px;
+      transition:color .15s;
+    }
+    .btn-back:hover{color:var(--white)}
+    .btn-back svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+    .inf-card{
+      background:var(--card);border:1px solid var(--border2);
+      border-radius:16px;padding:18px 20px;
+      display:flex;align-items:center;justify-content:space-between;gap:16px;
+      margin-bottom:12px;transition:border-color .2s;cursor:pointer;
+    }
+    .inf-card:hover{border-color:rgba(255,45,120,.4)}
+    .inf-info{}
+    .inf-name{font-size:16px;font-weight:800;color:var(--white)}
+    .inf-empresa{font-size:12px;color:var(--muted);margin-top:2px}
+    .inf-fecha{font-size:11px;color:var(--muted);margin-top:4px}
+    .inf-usos{
+      flex-shrink:0;text-align:center;
+      background:var(--pink-soft);border:1px solid rgba(255,45,120,.3);
+      border-radius:12px;padding:10px 16px;
+      min-width:70px;
+    }
+    .inf-usos-num{font-size:24px;font-weight:900;color:var(--pink)}
+    .inf-usos-label{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-top:2px}
+
+    .hist-empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px}
+    .hist-empty svg{width:40px;height:40px;stroke:var(--muted);fill:none;stroke-width:1.5;margin:0 auto 12px;display:block}
+
+    .search-wrap{
+      position:relative;margin-bottom:20px;
+    }
+    .search-wrap svg{
+      position:absolute;left:14px;top:50%;transform:translateY(-50%);
+      width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+      pointer-events:none;
+    }
+    .search-input{
+      width:100%;background:var(--card2);
+      border:1.5px solid var(--border2);border-radius:14px;
+      padding:13px 16px 13px 42px;
+      font-size:14px;font-weight:500;color:var(--white);font-family:inherit;outline:none;
+      transition:border-color .2s,box-shadow .2s;
+    }
+    .search-input:focus{border-color:var(--pink);box-shadow:0 0 0 3px var(--pink-soft)}
+    .search-input::placeholder{color:var(--muted)}
+    .search-count{
+      font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;
+      text-align:right;margin-bottom:12px;margin-top:-8px;
+    }
+    .inf-name mark{background:transparent;color:var(--pink);font-weight:900}
+
+    .hist-stats-row{
+      display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;
+    }
+    .stat-box{
+      background:var(--card);border:1px solid var(--border2);border-radius:14px;
+      padding:16px;text-align:center;
+    }
+    .stat-num{font-size:28px;font-weight:900;color:var(--pink)}
+    .stat-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-top:4px}
+
+    /* TOAST */
+    #toast{
+      position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+      background:#1e1e2e;border:1px solid var(--border2);
+      border-radius:100px;padding:10px 22px;
+      font-size:13px;font-weight:700;color:var(--white);
+      white-space:nowrap;z-index:9999;
+      transition:transform .28s cubic-bezier(.34,1.4,.64,1),opacity .2s;
+      opacity:0;pointer-events:none;
+    }
+    #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+    #toast.err{border-color:rgba(239,68,68,.4);color:#fca5a5}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon"><img src="Gemini_Generated_Image_pmwvltpmwvltpmwv-removebg-preview.png" alt="Logo"></div>
+    <div>
+      <div class="logo-name">GlidePass <span style="color:var(--pink)">Mama</span></div>
+      <div class="logo-sub">Influencer QR · Discoteca Mama</div>
+    </div>
+  </div>
+  <button class="btn-hist-m" onclick="abrirHistorial()">
+    <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
+    Historial
+  </button>
+</header>
+
+<main>
+  <!-- PAGE: CREAR QR -->
+  <div class="page active" id="page-crear">
+
+    <div class="page-logo">
+      <img src="Gemini_Generated_Image_pmwvltpmwvltpmwv-removebg-preview.png" alt="Logo empresa">
+    </div>
+
+    <div class="field">
+      <label>Nombre del Influencer / TikToker</label>
+      <input id="inp-tiktoker" placeholder="Ej: @mariajose, Jose Mamani..." autocomplete="off"/>
+    </div>
+    <div class="field">
+      <label>Empresa / Marca (opcional)</label>
+      <input id="inp-empresa" placeholder="Ej: Red Bull, Nike, independiente..."/>
+    </div>
+
+    <button class="btn-gen" id="btn-gen" onclick="generarQR()">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3M21 21v.01M12 7v3a2 2 0 0 1-2 2H7M3 12h.01M12 3h.01M12 16v.01M16 12h1M21 12v.01M12 21v-1"/></svg>
+      Generar QR
+    </button>
+
+    <div class="qr-result" id="qr-result">
+      <div class="qr-result-title">✦ QR de Influencer · Uso Ilimitado ✦</div>
+      <div class="qr-wrap" id="qr-wrap"></div>
+      <div class="qr-influencer" id="res-tiktoker"></div>
+      <div class="qr-empresa" id="res-empresa"></div>
+      <div class="qr-badge-usos">
+        <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Reutilizable · Accesos ilimitados
+      </div>
+      <button class="btn-dl" onclick="descargarPDF()">⬇ Descargar PDF</button>
+    </div>
+  </div>
+
+  <!-- PAGE: HISTORIAL -->
+  <div class="page" id="page-hist">
+    <button class="btn-back" onclick="volverCrear()">
+      <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+      Volver
+    </button>
+    <div class="hist-title">Historial de Influencers</div>
+    <p class="hist-sub">Discoteca Mama · Accesos por influencer</p>
+
+    <div class="hist-stats-row" id="hist-stats"></div>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" id="search-inp" placeholder="Buscar por nombre..." oninput="filtrarHistorial(this.value)"/>
+    </div>
+    <div class="search-count" id="search-count"></div>
+
+    <div id="hist-list"></div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+  const sb = window.supabase.createClient(
+    'https://czpzkkakhdcwhbclhugk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6cHpra2FraGRjd2hiY2xodWdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MTA0MzIsImV4cCI6MjA4OTE4NjQzMn0.dfUGsaZxg16X_S0uuGmCSvVTSGXVnwRGpBDqda5Z1P8'
+  );
+
+  let currentRow = null;
+  let historialData = [];
+
+  function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+
+  let _tt;
+  function showToast(msg, type='') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show' + (type ? ' '+type : '');
+    clearTimeout(_tt);
+    _tt = setTimeout(() => t.className = '', 2800);
+  }
+
+  function goPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function volverCrear() { goPage('page-crear'); }
+
+  async function generarQR() {
+    const tiktoker = document.getElementById('inp-tiktoker').value.trim();
+    const empresa  = document.getElementById('inp-empresa').value.trim() || 'Independiente';
+    if (!tiktoker) { showToast('Ingresa el nombre del influencer','err'); return; }
+
+    const btn = document.getElementById('btn-gen');
+    btn.disabled = true; btn.innerHTML = '⏳ Generando...';
+
+    const slug   = tiktoker.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+    const codigo = `mama-inf-${slug}-${uid()}`;
+
+    const row = {
+      codigo,
+      area: 'MAMA',
+      mesa: 0,
+      combo: 'MAMA',
+      trago: null,
+      tipo: 'regalo',
+      numero_invitado: null,
+      usado: false,
+      nombre: tiktoker,
+      usos: 0
+    };
+
+    const { error } = await sb.from('qr_codes').insert([row]);
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3M21 21v.01M12 7v3a2 2 0 0 1-2 2H7M3 12h.01M12 3h.01M12 16v.01M16 12h1M21 12v.01M12 21v-1"/></svg> Generar QR';
+
+    if (error) { showToast('Error: '+error.message,'err'); return; }
+
+    currentRow = { ...row, empresa };
+    showToast('✓ QR generado');
+
+    const result = document.getElementById('qr-result');
+    result.classList.add('show');
+    const wrap = document.getElementById('qr-wrap');
+    wrap.innerHTML = '';
+    new QRCode(wrap, { text: codigo, width:160, height:160, colorDark:'#0d0d0d', colorLight:'#ffffff' });
+    document.getElementById('res-tiktoker').textContent = tiktoker;
+    document.getElementById('res-empresa').textContent  = empresa;
+  }
+
+  async function descargarPDF() {
+    if (!currentRow) { showToast('Genera un QR primero','err'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+    const qrData = await new Promise(resolve => {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:fixed;left:-9999px;top:-9999px;visibility:hidden';
+      document.body.appendChild(div);
+      const size = 500;
+      new QRCode(div, { text: currentRow.codigo, width:size, height:size, colorDark:'#000000', colorLight:'#ffffff' });
+      setTimeout(() => {
+        const cvs = div.querySelector('canvas');
+        const img = div.querySelector('img');
+        let data = null;
+        if (cvs) {
+          data = cvs.toDataURL('image/png');
+        } else if (img) {
+          data = img.src;
+        }
+        document.body.removeChild(div);
+        resolve(data);
+      }, 400);
+    });
+
+    const W=210, H=297, PINK=[255,45,120];
+    const DARK=[10,10,15];
+
+    doc.setFillColor(DARK[0],DARK[1],DARK[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(20,10,25); doc.rect(0,0,W,36,'F');
+    doc.setFillColor(PINK[0],PINK[1],PINK[2]);
+    doc.rect(0,0,5,36,'F'); doc.rect(W-5,0,5,36,'F');
+
+    doc.setTextColor(PINK[0],PINK[1],PINK[2]);
+    doc.setFontSize(24); doc.setFont('helvetica','bold');
+    doc.text('MAMA', W/2, 18, {align:'center'});
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.setTextColor(200,150,180);
+    doc.text('D I S C O T E C A   ·   E X P E R I E N C I A   P R E M I U M', W/2, 28, {align:'center'});
+    doc.setDrawColor(PINK[0],PINK[1],PINK[2]); doc.setLineWidth(0.8);
+    doc.line(15,36,W-15,36);
+
+    var qbX=40,qbY=40,qbW=130,qbH=130;
+    doc.setFillColor(255,255,255); doc.roundedRect(qbX,qbY,qbW,qbH,4,4,'F');
+    if(qrData) doc.addImage(qrData,'PNG',qbX+4,qbY+4,qbW-8,qbH-8);
+
+    var y = 180;
+
+    var tikStr = (currentRow.nombre||'').toUpperCase();
+    var tfs = tikStr.length > 22 ? 18 : tikStr.length > 14 ? 22 : 28;
+    doc.setFontSize(tfs); doc.setFont('helvetica','bold');
+    doc.setTextColor(PINK[0],PINK[1],PINK[2]);
+    doc.text(tikStr, W/2, y, {align:'center'});
+    y += 14;
+
+    var empStr = (currentRow.empresa||'').toUpperCase();
+    if (empStr && empStr !== 'INDEPENDIENTE') {
+      doc.setFontSize(16); doc.setFont('helvetica','bold');
+      doc.setTextColor(220,210,240);
+      doc.text(empStr, W/2, y, {align:'center'});
+      y += 14;
+    }
+
+    doc.setFontSize(13); doc.setFont('helvetica','bolditalic');
+    doc.setTextColor(180,150,170);
+    doc.text('Discoteca Mama', W/2, y, {align:'center'});
+    y += 18;
+
+    doc.setDrawColor(PINK[0],PINK[1],PINK[2]); doc.setLineWidth(0.5);
+    doc.line(30,y,W-30,y);
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.setTextColor(PINK[0],PINK[1],PINK[2]);
+    doc.text('A C C E S O   I L I M I T A D O', W/2, y+12, {align:'center'});
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.setTextColor(100,90,110);
+    doc.text('Pase de cortesía · Reutilizable · Solo válido en Mama', W/2, y+22, {align:'center'});
+
+    const hoy = new Date();
+    const fechaStr = hoy.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+    doc.setTextColor(80,70,90);
+    doc.text(fechaStr, W/2, y+34, {align:'center'});
+
+    const fname = `MAMA_${(currentRow.nombre||'influencer').replace(/[^a-z0-9]/gi,'_')}.pdf`;
+    doc.save(fname);
+    showToast('✓ PDF descargado · Listo para el siguiente');
+
+    setTimeout(() => {
+      currentRow = null;
+      document.getElementById('inp-tiktoker').value = '';
+      document.getElementById('inp-empresa').value = '';
+      document.getElementById('qr-result').classList.remove('show');
+      document.getElementById('qr-wrap').innerHTML = '';
+      document.getElementById('inp-tiktoker').focus();
+    }, 800);
+  }
+
+  function formatFecha(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return d.toLocaleDateString('es',{day:'numeric',month:'short',year:'numeric'});
+  }
+
+  function resaltarTexto(texto, q) {
+    if (!q) return texto;
+    const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+    return texto.replace(re, '<mark>$1</mark>');
+  }
+
+  function renderCards(lista, q='') {
+    const el = document.getElementById('hist-list');
+    const countEl = document.getElementById('search-count');
+    if (!lista.length) {
+      el.innerHTML = '<div class="hist-empty"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>Sin resultados para esa búsqueda</p></div>';
+      countEl.textContent = '0 resultados';
+      return;
+    }
+    countEl.textContent = q ? `${lista.length} resultado${lista.length!==1?'s':''} encontrado${lista.length!==1?'s':''}` : '';
+    el.innerHTML = lista.map(r => `
+      <div class="inf-card">
+        <div class="inf-info">
+          <div class="inf-name">${resaltarTexto(r.nombre||'—', q)}</div>
+          <div class="inf-empresa">${r.empresa||''}</div>
+          <div class="inf-fecha">${formatFecha(r.creado_at)}</div>
+        </div>
+        <div class="inf-usos">
+          <div class="inf-usos-num">${r.usos||0}</div>
+          <div class="inf-usos-label">accesos</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function filtrarHistorial(q) {
+    const term = q.trim().toLowerCase();
+    if (!term) { renderCards(historialData, ''); return; }
+    const filtrado = historialData.filter(r => (r.nombre||'').toLowerCase().includes(term));
+    renderCards(filtrado, term);
+  }
+
+  async function abrirHistorial() {
+    goPage('page-hist');
+    document.getElementById('hist-list').innerHTML = '<div class="hist-empty"><p>Cargando...</p></div>';
+    document.getElementById('hist-stats').innerHTML = '';
+    document.getElementById('search-inp').value = '';
+    document.getElementById('search-count').textContent = '';
+
+    const { data, error } = await sb.from('qr_codes')
+      .select('*')
+      .eq('area','MAMA')
+      .eq('tipo','regalo')
+      .order('creado_at', { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      document.getElementById('hist-list').innerHTML =
+        '<div class="hist-empty"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><p>Sin influencers registrados aún</p></div>';
+      return;
+    }
+
+    historialData = data;
+
+    const totalInfluencers = data.length;
+    const totalUsos = data.reduce((s,r) => s + (r.usos||0), 0);
+
+    document.getElementById('hist-stats').innerHTML = `
+      <div class="stat-box">
+        <div class="stat-num">${totalInfluencers}</div>
+        <div class="stat-label">Influencers</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">${totalUsos}</div>
+        <div class="stat-label">Accesos totales</div>
+      </div>`;
+
+    renderCards(historialData);
+  }
+</script>
+</body>
+</html>
